@@ -1,27 +1,37 @@
 <template>
-  <div id="root">
-    <div>
-      <div id="search_bar">
-        <md-autocomplete
-          v-model="selectedCity"
-          :md-options="cities"
-          md-layout="box"
-          md-dense
-        >
-          <label>Cities</label>
-          <md-button class="md-raised md-primary" v-on:click="onSearch"
-            >Search</md-button
-          >
-        </md-autocomplete>
-      </div>
-    </div>
-    <div id="mapid"></div>
-  </div>
+  <b-container fluid class="h-100">
+    <b-row fluid class="h-100">
+      <b-col>
+        <b-container class="h-100">
+          <b-row>
+            <b-col>
+              <div id="search_bar">
+                <md-autocomplete
+                  v-model="selectedCity"
+                  :md-options="cities"
+                  md-layout="box"
+                  md-dense
+                >
+                  <label>Cities</label>
+                </md-autocomplete>
+              </div>
+              <md-button class="md-raised md-primary" v-on:click="onSearch"
+                >Search</md-button
+              >
+            </b-col>
+          </b-row>
+          <b-row class="h-100"> <div id="mapid"></div></b-row>
+        </b-container>
+      </b-col>
+      <b-col fluid class="h-100"></b-col>
+    </b-row>
+  </b-container>
 </template>
 
 <script>
 import L from "leaflet";
 import axios from "axios";
+import { parseTriples } from "../methods/parseTriples";
 
 export default {
   name: "Map",
@@ -33,13 +43,8 @@ export default {
         "<https://www.emse.fr/~zimmermann/Teaching/SemWeb/bicycle_stations.owl#mulhouseStation1> ?predicate ?object\n" +
         "}",
       mymap: null,
-      marker: null,
       circle: null,
       popup: null,
-      latitude:
-        "https://www.emse.fr/~zimmermann/Teaching/SemWeb/bicycle_stations.owl#latitude",
-      longitude:
-        "https://www.emse.fr/~zimmermann/Teaching/SemWeb/bicycle_stations.owl#longitude",
       queryUrl: null,
       selectedCity: null,
       cities: ["Saint-Etienne", "Paris", "Lyon", "Bordeaux", "Nantes"]
@@ -67,14 +72,7 @@ export default {
     // this.mymap.on("click", this.onMapClick);
   },
   methods: {
-    // onMapClick: function(e) {
-    //   this.popup = L.popup();
-    //   this.popup
-    //     .setLatLng(e.latlng)
-    //     .setContent("You clicked the map at " + e.latlng.toString())
-    //     .openOn(this.mymap);
-    //   this.mymap.panTo(new L.LatLng(40.737, -73.923));
-    // },
+    parseTriples,
     onSearch: function() {
       const qs = require("querystring");
 
@@ -89,20 +87,7 @@ export default {
           }
         })
         .then(response => {
-          if (response.data.results.bindings.length > 0) {
-            var list_triples = response.data.results.bindings;
-            let triple;
-            for (triple in list_triples) {
-              if (list_triples[triple].predicate.value === this.latitude) {
-                var lat = parseFloat(list_triples[triple].object.value);
-              }
-              if (list_triples[triple].predicate.value === this.longitude) {
-                var long = parseFloat(list_triples[triple].object.value);
-              }
-            }
-            this.mymap.panTo(new L.LatLng(lat, long));
-            this.marker = L.marker([lat, long]).addTo(this.mymap);
-          }
+          parseTriples(response.data.results.bindings, this.mymap);
         });
     }
   }
@@ -130,13 +115,8 @@ a {
   min-height: 100%;
 }
 
-#root {
-  width: 100%;
-  height: 100%;
-}
-
 #search_bar {
   float: left;
-  width: 50%;
+  width: 60%;
 }
 </style>
